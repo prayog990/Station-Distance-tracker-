@@ -374,7 +374,11 @@
       <button class="back-btn" onclick="goBack()">←</button>
       <div class="header-title">RAIL TRACK</div>
       <div class="dir-indicator" id="dir-badge">UP ↑</div>
+      <button onclick="togglePiP()" id="pip-btn" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; color: var(--text); cursor: pointer; font-size: 0.9rem; margin-left:5px;">📺 Float</button>
     </div>
+    <!-- Hidden Canvas for PiP -->
+    <canvas id="pip-canvas" width="300" height="150" style="display:none;"></canvas>
+    <video id="pip-video" autoplay muted style="display:none;"></video>
     <div style="display: flex; align-items: center; gap: 10px;">
       <button onclick="openAdmin()" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; color: var(--text); cursor: pointer; font-size: 1.1rem;">⚙️</button>
       <div class="gps-status">
@@ -537,8 +541,61 @@ let firedAlarms = new Set();
 let SPEED_KMH = 40; 
 let audioCtx = null;
 let alarmInterval = null;
+let pipActive = false;
 
-// Audio context unlock
+async function togglePiP() {
+  const video = document.getElementById('pip-video');
+  const canvas = document.getElementById('pip-canvas');
+  
+  if (!pipActive) {
+    try {
+      const stream = canvas.captureStream(10); // 10 FPS
+      video.srcObject = stream;
+      await video.play();
+      await video.requestPictureInPicture();
+      pipActive = true;
+      document.getElementById('pip-btn').textContent = "📺 Stop Float";
+      updatePiPCanvas();
+    } catch (err) {
+      alert("Floating mode ispe support nahi kar raha!");
+    }
+  } else {
+    if (document.pictureInPictureElement) document.exitPictureInPicture();
+    pipActive = false;
+    document.getElementById('pip-btn').textContent = "📺 Float";
+  }
+}
+
+function updatePiPCanvas() {
+  if (!pipActive) return;
+  const canvas = document.getElementById('pip-canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Design the floating box
+  ctx.fillStyle = '#161920';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.fillStyle = '#f5a623';
+  ctx.font = 'bold 24px Rajdhani';
+  const stnName = document.getElementById('next-name').textContent;
+  ctx.fillText(stnName, 20, 50);
+  
+  ctx.fillStyle = '#e8eaf0';
+  ctx.font = '36px Space Mono';
+  const dist = document.getElementById('next-dist').textContent;
+  ctx.fillText(dist, 20, 100);
+
+  ctx.strokeStyle = '#f5a623';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+  requestAnimationFrame(updatePiPCanvas);
+}
+document.getElementById('pip-video').addEventListener('leavepictureinpicture', () => {
+  pipActive = false;
+  document.getElementById('pip-btn').textContent = "📺 Float";
+});
+
 function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 }
