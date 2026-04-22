@@ -374,11 +374,7 @@
       <button class="back-btn" onclick="goBack()">←</button>
       <div class="header-title">RAIL TRACK</div>
       <div class="dir-indicator" id="dir-badge">UP ↑</div>
-      <button onclick="togglePiP()" id="pip-btn" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; color: var(--text); cursor: pointer; font-size: 0.9rem; margin-left:5px;">📺 Float</button>
     </div>
-    <!-- Hidden Canvas for PiP -->
-    <canvas id="pip-canvas" width="300" height="150" style="display:none;"></canvas>
-    <video id="pip-video" autoplay muted style="display:none;"></video>
     <div style="display: flex; align-items: center; gap: 10px;">
       <button onclick="openAdmin()" style="background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; color: var(--text); cursor: pointer; font-size: 1.1rem;">⚙️</button>
       <div class="gps-status">
@@ -501,34 +497,275 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── DATA ─────────────────────────────────────────────────────────────────────
-const STATIONS_RAW = [
-  {"station":"Manabar","lat":18.840492,"lon":82.695571, "type":"STN", "dir":"BOTH"},
-  {"station":"Jarati","lat":18.891874,"lon":82.665381, "type":"STN", "dir":"BOTH"},
-  {"station":"Maligura","lat":18.953505,"lon":82.638622, "type":"STN", "dir":"BOTH"},
-  {"station":"Chattariput","lat":18.922689,"lon":82.590097, "type":"STN", "dir":"BOTH"},
-  {"station":"Jeypore","lat":18.895231,"lon":82.555724, "type":"STN", "dir":"BOTH"},
-  {"station":"Dhanapur","lat":18.942042,"lon":82.513883, "type":"STN", "dir":"BOTH"},
-  {"station":"Khadapa","lat":18.982736,"lon":82.468617, "type":"STN", "dir":"BOTH"},
-  {"station":"Charamula Kusumi","lat":19.01612,"lon":82.415111, "type":"STN", "dir":"BOTH"},
-  {"station":"Kotapar Road","lat":19.041657,"lon":82.307835, "type":"STN", "dir":"BOTH"},
-  {"station":"Ambagoan","lat":19.061753,"lon":82.241258, "type":"STN", "dir":"BOTH"},
-  {"station":"Amagura","lat":19.068659,"lon":82.147901, "type":"STN", "dir":"BOTH"},
-  {"station":"Nakti Semra","lat":19.061776,"lon":82.073807, "type":"STN", "dir":"BOTH"},
-  {"station":"Jagdalpur","lat":19.066038,"lon":82.01414, "type":"STN", "dir":"BOTH"},
-  {"station":"Kumhar Marenga","lat":19.034652,"lon":81.946605, "type":"STN", "dir":"BOTH"},
-  {"station":"Tokapal","lat":19.006474,"lon":81.878587, "type":"STN", "dir":"BOTH"},
-  {"station":"Bade Arapur","lat":19.012629,"lon":81.828722, "type":"STN", "dir":"BOTH"},
-  {"station":"Dilmili","lat":18.987838,"lon":81.737704, "type":"STN", "dir":"BOTH"},
-  {"station":"Silak Jhori","lat":18.977709,"lon":81.67065, "type":"STN", "dir":"BOTH"},
-  {"station":"Kumar Sodra","lat":18.919577,"lon":81.686003, "type":"STN", "dir":"BOTH"},
-  {"station":"Kaklur","lat":18.883297,"lon":81.620983, "type":"STN", "dir":"BOTH"},
-  {"station":"Kawargaon","lat":18.896378,"lon":81.537849, "type":"STN", "dir":"BOTH"},
-  {"station":"Dabpal","lat":18.928082,"lon":81.488991, "type":"STN", "dir":"BOTH"},
-  {"station":"Gidam","lat":18.936727,"lon":81.412305, "type":"STN", "dir":"BOTH"},
-  {"station":"Dantewara","lat":18.908166,"lon":81.355817, "type":"STN", "dir":"BOTH"},
-  {"station":"Bacheli","lat":18.703747,"lon":81.238185, "type":"STN", "dir":"BOTH"}
+// ── DATA ─────────────────────────────────────────────────────────────────────const STATIONS_RAW = [
+  ["Manabar",18.840492,82.695571,"STN BLD","UP"],
+  ["Manabar",18.842998,82.693833,"STARTER","UP"],
+  ["Manabar",18.846515,82.69144,"ADV STR","UP"],
+  ["Jarati",18.881199,82.666123,"DISTANT","UP"],
+  ["Jarati",18.884719,82.663606,"HOME","UP"],
+  ["Jarati",18.891874,82.665381,"STN BLD","UP"],
+  ["Jarati",18.894985,82.666286,"STARTER","UP"],
+  ["Jarati",18.896913,82.666686,"ADV STR","UP"],
+  ["Maligura",18.946528,82.649119,"DISTANT","UP"],
+  ["Maligura",18.951781,82.64466,"HOME","UP"],
+  ["Maligura",18.953505,82.638622,"STN BLD","UP"],
+  ["Maligura",18.952276,82.634455,"STARTER","UP"],
+  ["Maligura",18.952555,82.623598,"ADV STR","UP"],
+  ["Tunnel 1",18.900282,82.655987,"ENTRY","UP"],
+  ["Tunnel 1",18.898357,82.652355,"EXIT","UP"],
+  ["Chattariput",18.939427,82.600886,"DISTANT","UP"],
+  ["Chattariput",18.929292,82.594234,"HOME","UP"],
+  ["Chattariput",18.922689,82.590097,"STN BLD","UP"],
+  ["Chattariput",18.920214,82.588361,"STARTER","UP"],
+  ["Chattariput",18.918312,82.587234,"ADV STR","UP"],
+  ["Neutral Sec 1",18.917512,82.587019,"500M WARN","UP"],
+  ["Neutral Sec 1",18.917506,82.587021,"250M BRD","UP"],
+  ["Neutral Sec 1",18.891292,82.575104,"OPEN DJ","UP"],
+  ["Neutral Sec 1",18.890223,82.570579,"NS POINT","UP"],
+  ["Neutral Sec 1",18.889929,82.56938,"CLOSE DJ","UP"],
+  ["Jeypore",18.890957,82.56244,"HOME","UP"],
+  ["Jeypore",18.895231,82.555724,"STN BLD","UP"],
+  ["Jeypore",18.897336,82.552533,"STARTER","UP"],
+  ["Jeypore",18.900745,82.547164,"ADV STR","UP"],
+  ["Dhanapur",18.942042,82.513883,"STN BLD","UP"],
+  ["Neutral Sec 2",18.964626,82.485833,"500M WARN","UP"],
+  ["Neutral Sec 2",18.967047,82.483578,"250M BRD","UP"],
+  ["Neutral Sec 2",18.968533,82.482309,"OPEN DJ","UP"],
+  ["Neutral Sec 2",18.968919,82.481912,"CLOSE DJ","UP"],
+  ["Khadapa",18.971475,82.479482,"DISTANT","UP"],
+  ["Khadapa",18.97813,82.473013,"HOME","UP"],
+  ["Khadapa",18.982736,82.468617,"STN BLD","UP"],
+  ["Khadapa",18.985666,82.465654,"STARTER","UP"],
+  ["Khadapa",18.988265,82.463158,"ADV STR","UP"],
+  ["Charamula Kusumi",19.015585,82.427368,"HOME","UP"],
+  ["Charamula Kusumi",19.01612,82.415111,"STN BLD","UP"],
+  ["Charamula Kusumi",19.01631,82.411945,"STARTER","UP"],
+  ["Charamula Kusumi",19.016661,82.409048,"ADV STR","UP"],
+  ["Kotapar Road",19.041657,82.307835,"STN BLD","UP"],
+  ["Kotapar Road",19.04216,82.30545,"STARTER","UP"],
+  ["Kotapar Road",19.042704,82.302841,"ADV STR","UP"],
+  ["Amagura",19.068659,82.147901,"STN BLD","UP"],
+  ["Amagura",19.068645,82.144501,"STARTER","UP"],
+  ["Amagura",19.068669,82.143033,"ADV STR","UP"],
+  ["Nakti Semra",19.061776,82.073807,"STN BLD","UP"],
+  ["Nakti Semra",19.061857,82.069441,"STARTER","UP"],
+  ["Nakti Semra",19.06192,82.066741,"ADV STR","UP"],
+  ["Jagdalpur",19.066396,82.021811,"HOME","UP"],
+  ["Jagdalpur",19.066038,82.01414,"STN BLD","UP"],
+  ["Jagdalpur",19.069396,82.008871,"STARTER","UP"],
+  ["Neutral Sec 4",19.069344,81.989674,"OPEN DJ","UP"],
+  ["Neutral Sec 4",19.058561,81.975843,"CLOSE DJ","UP"],
+  ["Kumhar Marenga",19.034652,81.946605,"STN BLD","UP"],
+  ["Tokapal",19.006474,81.878587,"STN BLD","UP"],
+  ["Tokapal",19.006813,81.874356,"STARTER","UP"],
+  ["Tokapal",19.007111,81.871237,"ADV STR","UP"],
+  ["Neutral Sec 5",19.007308,81.868732,"500M WARN","UP"],
+  ["Neutral Sec 5",19.007528,81.866317,"250M BRD","UP"],
+  ["Neutral Sec 5",19.007663,81.864569,"OPEN DJ","UP"],
+  ["Neutral Sec 5",19.007753,81.863384,"NS POINT","UP"],
+  ["Neutral Sec 5",19.007886,81.861913,"CLOSE DJ","UP"],
+  ["Bade Arapur",19.012629,81.828722,"STN BLD","UP"],
+  ["Bade Arapur",19.012707,81.827496,"STARTER","UP"],
+  ["Bade Arapur",19.012744,81.823895,"ADV STR","UP"],
+  ["Neutral Sec 6",19.00447,81.805604,"500M WARN","UP"],
+  ["Neutral Sec 6",19.004852,81.803402,"250M BRD","UP"],
+  ["Neutral Sec 6",19.005296,81.802244,"OPEN DJ","UP"],
+  ["Neutral Sec 6",19.005523,81.801649,"NS POINT","UP"],
+  ["Neutral Sec 6",19.005944,81.800579,"CLOSE DJ","UP"],
+  ["Dilmili",18.994091,81.751172,"DISTANT","UP"],
+  ["Dilmili",18.988127,81.745118,"HOME","UP"],
+  ["Dilmili",18.987838,81.737704,"STN BLD","UP"],
+  ["Dilmili",18.987825,81.734592,"STARTER","UP"],
+  ["Dilmili",18.987798,81.732282,"ADV STR","UP"],
+  ["Silak Jhori",18.977709,81.67065,"STN BLD","UP"],
+  ["Silak Jhori",18.975564,81.669678,"STARTER","UP"],
+  ["Neutral Sec 7",18.961253,81.669352,"250M BRD","UP"],
+  ["Neutral Sec 7",18.959355,81.669898,"OPEN DJ","UP"],
+  ["Neutral Sec 7",18.958608,81.670223,"NS POINT","UP"],
+  ["Neutral Sec 7",18.957882,81.67054,"CLOSE DJ","UP"],
+  ["Kumar Sodra",18.919577,81.686003,"STN BLD","UP"],
+  ["Kumar Sodra",18.919052,81.683018,"STARTER","UP"],
+  ["Kumar Sodra",18.918213,81.680146,"ADV STR","UP"],
+  ["Neutral Sec 8",18.874749,81.634834,"250M BRD","UP"],
+  ["Neutral Sec 8",18.875114,81.634396,"OPEN DJ","UP"],
+  ["Neutral Sec 8",18.875391,81.633807,"NS POINT","UP"],
+  ["Neutral Sec 8",18.875639,81.633064,"CLOSE DJ","UP"],
+  ["Kaklur",18.88233,81.629466,"HOME","UP"],
+  ["Kaklur",18.883297,81.620983,"STN BLD","UP"],
+  ["Kaklur",18.882941,81.617964,"STARTER","UP"],
+  ["Kaklur",18.882719,81.616423,"ADV STR","UP"],
+  ["Kawargaon",18.896626,81.530447,"STARTER","UP"],
+  ["Kawargaon",18.896683,81.527816,"ADV STR","UP"],
+  ["Neutral Sec 9",18.916253,81.495385,"500M WARN","UP"],
+  ["Neutral Sec 9",18.918851,81.497034,"OPEN DJ","UP"],
+  ["Neutral Sec 9",18.920887,81.497597,"CLOSE DJ","UP"],
+  ["Dabpal",18.917628,81.4964,"DISTANT","UP"],
+  ["Dabpal",18.926976,81.498727,"HOME","UP"],
+  ["Dabpal",18.928082,81.488991,"STN BLD","UP"],
+  ["Dabpal",18.927947,81.486307,"STARTER","UP"],
+  ["Dabpal",18.927758,81.483373,"ADV STR","UP"],
+  ["Gidam",18.935777,81.427017,"DISTANT","UP"],
+  ["Gidam",18.940051,81.42002,"HOME","UP"],
+  ["Gidam",18.936727,81.412305,"STN BLD","UP"],
+  ["Gidam",18.935015,81.409841,"STARTER","UP"],
+  ["Gidam",18.933344,81.4075,"ADV STR","UP"],
+  ["Dantewara",18.908166,81.355817,"STN BLD","UP"],
+  ["Kamlur",18.85294,81.296075,"DISTANT","UP"],
+  ["Kamlur",18.856416,81.287486,"HOME","UP"],
+  ["Kamlur",18.854453,81.276307,"STARTER","UP"],
+  ["Kamlur",18.853219,81.274098,"ADV STR","UP"],
+  ["Bacheli",18.703747,81.238185,"STN BLD","UP"],
+  ["Bacheli",18.699497,81.237597,"STARTER","UP"],
+  ["Kirandul",18.648445,81.261458,"ADV STR","DN"],
+  ["Bacheli",18.703783,81.238238,"STN BLD","DN"],
+  ["Bhansi",18.775618,81.264458,"STN BLD","DN"],
+  ["Bhansi",18.778857,81.265214,"STARTER","DN"],
+  ["Bhansi",18.780818,81.266014,"ADV STR","DN"],
+  ["Kamlur",18.852592,81.271682,"HOME","DN"],
+  ["Kamlur",18.855729,81.278479,"STN BLD","DN"],
+  ["Kamlur",18.856492,81.284237,"STARTER","DN"],
+  ["Kamlur",18.856478,81.287097,"ADV STR","DN"],
+  ["Neutral Sec 10",18.886568,81.334424,"500M WARN","DN"],
+  ["Neutral Sec 10",18.888675,81.335242,"250M BRD","DN"],
+  ["Neutral Sec 10",18.89035,81.335585,"OPEN DJ","DN"],
+  ["Neutral Sec 10",18.890914,81.335708,"NS POINT","DN"],
+  ["Neutral Sec 10",18.891434,81.335826,"CLOSE DJ","DN"],
+  ["Dantewara",18.907869,81.347182,"HOME","DN"],
+  ["Gidam",18.925508,81.399537,"DISTANT","DN"],
+  ["Gidam",18.932488,81.406183,"HOME","DN"],
+  ["Gidam",18.936784,81.412199,"STN BLD","DN"],
+  ["Gidam",18.938648,81.41625,"STARTER","DN"],
+  ["Gidam",18.939763,81.419028,"ADV STR","DN"],
+  ["Dabpal",18.930126,81.472904,"DISTANT","DN"],
+  ["Dabpal",18.92802,81.482359,"HOME","DN"],
+  ["Dabpal",18.928138,81.488648,"STN BLD","DN"],
+  ["Dabpal",18.928422,81.492935,"STARTER","DN"],
+  ["Dabpal",18.928563,81.496985,"ADV STR","DN"],
+  ["Kawargaon",18.895318,81.517655,"DISTANT","DN"],
+  ["Kawargaon",18.896909,81.526431,"HOME","DN"],
+  ["Kawargaon",18.896378,81.537849,"STN BLD","DN"],
+  ["Kawargaon",18.896223,81.541219,"ADV STR","DN"],
+  ["Kaklur",18.875234,81.606591,"DISTANT","DN"],
+  ["Kaklur",18.882119,81.614699,"HOME","DN"],
+  ["Kaklur",18.88343,81.620713,"STN BLD","DN"],
+  ["Kaklur",18.883856,81.624731,"STARTER","DN"],
+  ["Kaklur",18.88398,81.628068,"ADV STR","DN"],
+  ["Neutral Sec 8",18.878886,81.630265,"500M WARN","DN"],
+  ["Neutral Sec 8",18.876665,81.631438,"250M BRD","DN"],
+  ["Neutral Sec 8",18.875823,81.633077,"OPEN DJ","DN"],
+  ["Neutral Sec 8",18.875614,81.63364,"NS POINT","DN"],
+  ["Neutral Sec 8",18.875288,81.634286,"CLOSE DJ","DN"],
+  ["Kumar Sodra",18.912275,81.670967,"DISTANT","DN"],
+  ["Kumar Sodra",18.918106,81.679486,"HOME","DN"],
+  ["Kumar Sodra",18.919607,81.685793,"STN BLD","DN"],
+  ["Kumar Sodra",18.917849,81.690152,"STARTER","DN"],
+  ["Kumar Sodra",18.916444,81.692428,"ADV STR","DN"],
+  ["Neutral Sec 7",18.954784,81.672198,"500M WARN","DN"],
+  ["Neutral Sec 7",18.956609,81.671096,"250M BRD","DN"],
+  ["Neutral Sec 7",18.958368,81.670301,"OPEN DJ","DN"],
+  ["Neutral Sec 7",18.958804,81.670109,"NS POINT","DN"],
+  ["Neutral Sec 7",18.959419,81.669812,"CLOSE DJ","DN"],
+  ["Silak Jhori",18.96283,81.669257,"DISTANT","DN"],
+  ["Silak Jhori",18.972134,81.668687,"HOME","DN"],
+  ["Silak Jhori",18.97757,81.670441,"STN BLD","DN"],
+  ["Silak Jhori",18.982757,81.67285,"STARTER","DN"],
+  ["Silak Jhori",18.984481,81.673639,"ADV STR","DN"],
+  ["Dilmili",18.976499,81.728892,"DISTANT","DN"],
+  ["Dilmili",18.987458,81.731124,"HOME","DN"],
+  ["Dilmili",18.987859,81.741569,"STN BLD","DN"],
+  ["Dilmili",18.987945,81.74429,"ADV STR","DN"],
+  ["Neutral Sec 6",19.007118,81.796545,"500M WARN","DN"],
+  ["Neutral Sec 6",19.006704,81.798665,"250M BRD","DN"],
+  ["Neutral Sec 6",19.005951,81.800571,"OPEN DJ","DN"],
+  ["Neutral Sec 6",19.005749,81.801095,"NS POINT","DN"],
+  ["Neutral Sec 6",19.005346,81.802152,"CLOSE DJ","DN"],
+  ["Bade Arapur",19.012446,81.817967,"HOME","DN"],
+  ["Bade Arapur",19.012707,81.828582,"STN BLD","DN"],
+  ["Bade Arapur",19.012371,81.8327,"STARTER","DN"],
+  ["Neutral Sec 5",19.008281,81.858077,"500M WARN","DN"],
+  ["Neutral Sec 5",19.008156,81.859831,"250M BRD","DN"],
+  ["Neutral Sec 5",19.007921,81.862184,"OPEN DJ","DN"],
+  ["Neutral Sec 5",19.007832,81.863329,"NS POINT","DN"],
+  ["Neutral Sec 5",19.007783,81.864478,"CLOSE DJ","DN"],
+  ["Tokapal",19.008228,81.858931,"DISTANT","DN"],
+  ["Tokapal",19.007359,81.868779,"HOME","DN"],
+  ["Tokapal",19.00653,81.878448,"STN BLD","DN"],
+  ["Tokapal",19.00647,81.881698,"STARTER","DN"],
+  ["Tokapal",19.006427,81.884583,"ADV STR","DN"],
+  ["Kumhar Marenga",19.029531,81.94231,"HOME","DN"],
+  ["Kumhar Marenga",19.034823,81.946675,"STN BLD","DN"],
+  ["Kumhar Marenga",19.03783,81.949122,"STARTER","DN"],
+  ["Kumhar Marenga",19.039941,81.950895,"ADV STR","DN"],
+  ["Neutral Sec 4",19.05563,81.973361,"500M WARN","DN"],
+  ["Neutral Sec 4",19.057294,81.974697,"250M BRD","DN"],
+  ["Neutral Sec 4",19.058602,81.975733,"OPEN DJ","DN"],
+  ["Neutral Sec 4",19.059328,81.976324,"NS POINT","DN"],
+  ["Neutral Sec 4",19.060075,81.976918,"CLOSE DJ","DN"],
+  ["Jagdalpur",19.072948,82.002801,"HOME","DN"],
+  ["Jagdalpur",19.066299,82.013962,"STN BLD","DN"],
+  ["Gate 14 (S)",19.062154,82.025586,"DISTANT","DN"],
+  ["Gate 14 (S)",19.062022,82.035453,"HOME","DN"],
+  ["Nakti Semra",19.061971,82.055357,"DISTANT","DN"],
+  ["Nakti Semra",19.061867,82.065129,"HOME","DN"],
+  ["Nakti Semra",19.061816,82.073647,"STN BLD","DN"],
+  ["Nakti Semra",19.061787,82.077283,"STARTER","DN"],
+  ["Nakti Semra",19.061789,82.080539,"ADV STR","DN"],
+  ["Amagura",19.068683,82.131041,"DISTANT","DN"],
+  ["Amagura",19.068638,82.141232,"HOME","DN"],
+  ["Amagura",19.068618,82.147577,"STN BLD","DN"],
+  ["Amagura",19.068595,82.151693,"STARTER","DN"],
+  ["Amagura",19.068579,82.157725,"ADV STR","DN"],
+  ["Neutral Sec 3",19.068379,82.182891,"500M WARN","DN"],
+  ["Neutral Sec 3",19.068324,82.185254,"250M BRD","DN"],
+  ["Neutral Sec 3",19.068345,82.187558,"OPEN DJ","DN"],
+  ["Neutral Sec 3",19.068344,82.188131,"NS POINT","DN"],
+  ["Neutral Sec 3",19.068316,82.189254,"CLOSE DJ","DN"],
+  ["Ambagaun",19.068297,82.224695,"DISTANT","DN"],
+  ["Ambagaun",19.06504,82.233775,"HOME","DN"],
+  ["Ambagaun",19.061753,82.241258,"STN BLD","DN"],
+  ["Ambagaun",19.060562,82.243916,"STARTER","DN"],
+  ["Ambagaun",19.059065,82.24739,"ADV STR","DN"],
+  ["Kotapar Road",19.045174,82.291724,"DISTANT","DN"],
+  ["Kotapar Road",19.042994,82.301521,"HOME","DN"],
+  ["Kotapar Road",19.041588,82.30782,"STN BLD","DN"],
+  ["Kotapar Road",19.040427,82.313061,"STARTER","DN"],
+  ["Kotapar Road",19.039805,82.31584,"ADV STR","DN"],
+  ["Charamula Kusumi",19.021278,82.400316,"DISTANT","DN"],
+  ["Charamula Kusumi",19.016732,82.408584,"HOME","DN"],
+  ["Charamula Kusumi",19.016113,82.4151,"STN BLD","DN"],
+  ["Charamula Kusumi",19.015707,82.419058,"STARTER","DN"],
+  ["Charamula Kusumi",19.015319,82.42228,"ADV STR","DN"],
+  ["Khadapa",18.995626,82.456086,"DISTANT","DN"],
+  ["Khadapa",18.988858,82.46263,"HOME","DN"],
+  ["Khadapa",18.982738,82.468504,"STN BLD","DN"],
+  ["Khadapa",18.980444,82.470706,"STARTER","DN"],
+  ["Khadapa",18.978057,82.473004,"ADV STR","DN"],
+  ["Neutral Sec 2",18.971637,82.47923,"500M WARN","DN"],
+  ["Neutral Sec 2",18.969597,82.481204,"250M BRD","DN"],
+  ["Neutral Sec 2",18.968728,82.482041,"OPEN DJ","DN"],
+  ["Neutral Sec 2",18.967915,82.482804,"NS POINT","DN"],
+  ["Neutral Sec 2",18.967116,82.483611,"CLOSE DJ","DN"],
+  ["Dhanapur",18.953454,82.501266,"DISTANT","DN"],
+  ["Dhanapur",18.945553,82.506858,"HOME","DN"],
+  ["Dhanapur",18.942141,82.513562,"STN BLD","DN"],
+  ["Dhanapur",18.939002,82.520413,"ADV STR","DN"],
+  ["Jeypore",18.901118,82.5467,"HOME","DN"],
+  ["Jeypore",18.895776,82.554908,"STN BLD","DN"],
+  ["Jeypore",18.893216,82.55888,"STARTER","DN"],
+  ["Jeypore",18.891463,82.561692,"ADV STR","DN"],
+  ["Neutral Sec 1",18.889607,82.565592,"500M WARN","DN"],
+  ["Neutral Sec 1",18.889763,82.568204,"250M BRD","DN"],
+  ["Neutral Sec 1",18.890017,82.569378,"OPEN DJ","DN"],
+  ["Neutral Sec 1",18.890321,82.570488,"NS POINT","DN"],
+  ["Neutral Sec 1",18.89062,82.571694,"CLOSE DJ","DN"],
+  ["Chattariput",18.907675,82.588058,"DISTANT","DN"],
+  ["Chattariput",18.917354,82.586755,"HOME","DN"],
+  ["Chattariput",18.922654,82.589982,"STN BLD","DN"],
+  ["Chattariput",18.926148,82.592701,"STARTER","DN"],
+  ["Chattariput",18.927498,82.593656,"ADV STR","DN"],
+  ["Maligura",18.951326,82.631456,"HOME","DN"]
 ];
+
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let direction = null;
@@ -541,61 +778,8 @@ let firedAlarms = new Set();
 let SPEED_KMH = 40; 
 let audioCtx = null;
 let alarmInterval = null;
-let pipActive = false;
 
-async function togglePiP() {
-  const video = document.getElementById('pip-video');
-  const canvas = document.getElementById('pip-canvas');
-  
-  if (!pipActive) {
-    try {
-      const stream = canvas.captureStream(10); // 10 FPS
-      video.srcObject = stream;
-      await video.play();
-      await video.requestPictureInPicture();
-      pipActive = true;
-      document.getElementById('pip-btn').textContent = "📺 Stop Float";
-      updatePiPCanvas();
-    } catch (err) {
-      alert("Floating mode ispe support nahi kar raha!");
-    }
-  } else {
-    if (document.pictureInPictureElement) document.exitPictureInPicture();
-    pipActive = false;
-    document.getElementById('pip-btn').textContent = "📺 Float";
-  }
-}
-
-function updatePiPCanvas() {
-  if (!pipActive) return;
-  const canvas = document.getElementById('pip-canvas');
-  const ctx = canvas.getContext('2d');
-  
-  // Design the floating box
-  ctx.fillStyle = '#161920';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  ctx.fillStyle = '#f5a623';
-  ctx.font = 'bold 24px Rajdhani';
-  const stnName = document.getElementById('next-name').textContent;
-  ctx.fillText(stnName, 20, 50);
-  
-  ctx.fillStyle = '#e8eaf0';
-  ctx.font = '36px Space Mono';
-  const dist = document.getElementById('next-dist').textContent;
-  ctx.fillText(dist, 20, 100);
-
-  ctx.strokeStyle = '#f5a623';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-  requestAnimationFrame(updatePiPCanvas);
-}
-document.getElementById('pip-video').addEventListener('leavepictureinpicture', () => {
-  pipActive = false;
-  document.getElementById('pip-btn').textContent = "📺 Float";
-});
-
+// Audio context unlock
 function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 }
@@ -694,7 +878,16 @@ function startTracking() {
   initAudio();
   if (!direction) return;
   localStorage.setItem('rail_dir', direction);
-  stations = STATIONS_RAW.filter(s => s.dir === 'BOTH' || s.dir === direction);
+
+  // Solution 1: Array format को वापस Object में मैप करें ताकि App को पता न चले कि डेटा बदला है
+  const mappedData = STATIONS_RAW.map(s => {
+    if (Array.isArray(s)) {
+      return { station: s[0], lat: s[1], lon: s[2], type: s[3], dir: s[4] };
+    }
+    return s; // अगर पुराना डेटा है तो वैसे ही रहने दें
+  });
+
+  stations = mappedData.filter(s => s.dir === 'BOTH' || s.dir === direction);
   if (direction === 'DOWN') stations.reverse();
   document.getElementById('screen-direction').classList.remove('active');
   document.getElementById('screen-tracker').classList.add('active');
